@@ -55,28 +55,35 @@ know what judged it.
 
 ## Install
 
-Requires **Node ≥22.22.3, ≥24.15, or ≥25.9**.
-
 ```bash
-npm install -g openclaw
-
-git clone https://github.com/amirjundi/ankedo-agent.git
-cd ankedo-agent
-npm install
-npm run build
-
-openclaw config set plugins.load.paths '["'"$PWD"'"]'
-openclaw plugins enable ankedo
+curl -fsSL https://raw.githubusercontent.com/amirjundi/ankedo-agent/master/install.sh | bash
 ```
+
+Installs OpenClaw, builds this plugin, registers it, copies the persona into the agent
+workspace, and puts an `ankedo` command on your PATH.
+
+Requires **Node ≥22.22.3 <23, ≥24.15 <25, or ≥25.9** — a disjunction, not a floor.
+Node 23.x and 24.11 are *excluded* despite being numerically higher than 22.22.3, and
+the installer checks properly rather than comparing against the lowest version.
 
 Then point it at the platform:
 
 ```bash
-openclaw config set plugins.entries.ankedo.config.platformUrl https://ettok.net/api/hermes/
-openclaw config set plugins.entries.ankedo.config.agentKey <key with the hate_speech_scan scope>
-openclaw config set plugins.entries.ankedo.config.agentId ankedo-<hostname>
-openclaw config set plugins.entries.ankedo.config.databasePath ~/.ankedo/evidence.db
+ankedo config set plugins.entries.ankedo.config.platformUrl https://ettok.net/api/hermes/
+ankedo config set plugins.entries.ankedo.config.agentKey <key with the hate_speech_scan scope>
+ankedo config set plugins.entries.ankedo.config.agentId ankedo-$(hostname)
+ankedo config set plugins.entries.ankedo.config.databasePath ~/.ankedo/evidence.db
 ```
+
+### On the `ankedo` command
+
+It is a wrapper that execs `openclaw`, not a rename, and the distinction is load
+bearing. OpenClaw spawns `openclaw` as a subprocess in several places — the ACP
+client, the native hook relay, tool descriptors — so the real binary has to keep its
+name. Renaming it would break those calls at the moment they are used rather than at
+install, which is the worst time to find out.
+
+So `ankedo` and `openclaw` both work and are the same program.
 
 `agentId` is not optional in practice: the platform scopes idempotency on
 `(agent_id, key)`, so two machines omitting it share a namespace and one silently
