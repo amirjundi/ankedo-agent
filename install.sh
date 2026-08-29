@@ -99,11 +99,16 @@ WRAPPER='#!/usr/bin/env bash
 # several places, so the real binary keeps its name.
 exec openclaw "$@"'
 
+# sudo -n, never plain sudo: run as `curl ... | bash` the script *is* stdin, so a
+# password prompt has no terminal to read from. It would hang, or fail at the very
+# last step of an otherwise finished install. If sudo would need a password we use
+# ~/.local/bin instead, which needs no privileges at all.
 if [ -w /usr/local/bin ] 2>/dev/null; then
   printf '%s\n' "$WRAPPER" > /usr/local/bin/ankedo && chmod +x /usr/local/bin/ankedo
   ok "/usr/local/bin/ankedo"
-elif command -v sudo >/dev/null 2>&1; then
-  printf '%s\n' "$WRAPPER" | sudo tee /usr/local/bin/ankedo >/dev/null && sudo chmod +x /usr/local/bin/ankedo
+elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null &&
+     printf '%s\n' "$WRAPPER" | sudo -n tee /usr/local/bin/ankedo >/dev/null &&
+     sudo -n chmod +x /usr/local/bin/ankedo; then
   ok "/usr/local/bin/ankedo"
 else
   mkdir -p "$HOME/.local/bin"
